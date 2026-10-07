@@ -6,7 +6,7 @@
 //   PRIVATE_KEY=0x...            \  # the agent's own wallet: IMD for turns, a little ETH for gas
 //   DERBY=0x...                  \  # SwarmDerby address
 //   MAX_IMD=5                    \  # hard budget: total IMD this run may spend on turns
-//   QUALITY=100                  \  # 1-100, your variance dial (see agent.md)
+//   QUALITY=100                  \  # 1-100; 100 is a perfect swing (see agent.md)
 //   node agent-bot.mjs
 //
 // Optional: PACKS_PER_BUY (default 2), MAX_SWINGS (default unlimited), VELO (default 100).
@@ -52,7 +52,9 @@ const ERC20 = [
 ];
 const TIERS = ['WHIFF', 'FOUL', 'POP', 'HOMER', 'BOMB', 'SLAM'];
 
-const provider = new ethers.JsonRpcProvider(RPC_URL);
+// No read cache: on ~100ms blocks ethers' default 250ms cache can return a stale nonce
+// right after a confirmed transaction.
+const provider = new ethers.JsonRpcProvider(RPC_URL, undefined, { cacheTimeout: -1 });
 provider.pollingInterval = 200;
 const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 const derby = new ethers.Contract(DERBY, ABI, wallet);

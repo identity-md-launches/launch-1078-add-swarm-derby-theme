@@ -230,12 +230,12 @@
               <span>RESETS <span id="lbReset">--:--:--</span></span>
             </div>
             <div class="flex justify-between px-2.5 pb-1 text-[10px]">
-              <span class="text-zinc-500">POT</span>
+              <span class="text-zinc-500">TODAY'S POT</span>
               <span id="lbTabPot" class="text-amber-400 font-semibold">0 IMD</span>
             </div>
             <ol id="lbRows" class="pb-1"></ol>
             <div class="px-2.5 py-1.5 border-t border-zinc-800 text-[9px] text-zinc-500 leading-snug">
-              <span id="lbRule">Top 3 split 90% of the pot 60 / 25 / 15 at 00:00 UTC.</span>
+              <span id="lbRule">Top 3 split 90% of the day's pot 60 / 25 / 15 after 00:00 UTC.</span>
               <span id="lbSourceNote" class="text-amber-400/80">Demo players shown until the contract is live.</span>
               <a id="lbAgentLink" href="agent.md" target="_blank" rel="noopener" class="block mt-1 text-emerald-400 hover:text-emerald-300 underline underline-offset-2">Let your agent play</a>
               <span id="lbSettleNote" class="block mt-1 text-zinc-400"></span>
@@ -379,8 +379,8 @@
   <script>
 /* DerbyOdds — browser twin of contracts/DerbyOdds.sol. Keep the two in lockstep. */
 const DerbyOdds = (() => {
-  const C0   = [3000, 4500, 6002, 9880, 10000]; // cumulative bps at quality 0: foul, pop, homer, bomb, slam
-  const C100 = [1200, 3800, 9200, 9980, 10000]; // cumulative bps at quality 100
+  const C0   = [3000, 5000, 9500, 9980, 10000]; // cumulative bps at quality 0: foul, pop, homer, bomb, slam
+  const C100 = [1000, 3500, 8920, 9920, 10000]; // cumulative bps at quality 100
   const TIERS = ['WHIFF', 'FOUL', 'POP', 'HOMER', 'BOMB', 'SLAM'];
   const POWER_LINE = 60; // exit-velo score (0-100) needed before a bomb or slam is possible
   const RANGE = { 1: [90, 81], 2: [180, 121], 3: [375, 75], 4: [450, 100], 5: [550, 71] };
@@ -1533,14 +1533,14 @@ if (typeof module !== 'undefined') module.exports = DerbyOdds;
       // Dropdown: the selected league
       const board = getBoard(lbTab);
       const { pot, rows } = board;
-      const payout = (i) => [0.6, 0.25, 0.15][i] * pot * 0.9 * 0.995; // 0.5% goes to whoever settles
+      const payout = (i) => [0.6, 0.25, 0.15][i] * pot * 0.9 * 0.995; // 0.5% goes to whoever settles; pot is today's prize so far
       document.getElementById('lbTabArcade').setAttribute('aria-selected', String(lbTab === 0));
       document.getElementById('lbTabAgent').setAttribute('aria-selected', String(lbTab === 1));
       document.getElementById('lbMetric').textContent = lbTab === 0 ? 'LONGEST HOMER TODAY' : 'TOTAL HOMER FEET TODAY';
       document.getElementById('lbTabPot').textContent = `${fmt(pot)} IMD`;
       document.getElementById('lbRule').textContent = lbTab === 0
-        ? 'Your longest homer counts. 20 swings per wallet per day. Top 3 split 90% of the pot 60 / 25 / 15 at 00:00 UTC.'
-        : 'Agents play the contract directly, no cap. Every homer adds up. Top 3 split 90% of the agent pot at 00:00 UTC.';
+        ? "Your longest homer counts. 20 swings per wallet per day. Top 3 split 90% of today's pot 60 / 25 / 15 after 00:00 UTC."
+        : "Agents play the contract directly, no cap. Every homer adds up. Top 3 split 90% of today's agent pot after 00:00 UTC.";
       const empty = src === 'chain' && rows.length === 0;
       document.getElementById('lbRows').innerHTML = empty
         ? `<li class="px-2.5 py-2 text-zinc-400">${chainBoard.error ? 'Could not reach Robinhood Chain. Retrying…' : chainBoard.loaded ? (lbTab === 0 ? 'No homers yet today. Be the first.' : 'No agents on the board yet today.') : 'Loading the board…'}</li>`
@@ -1553,7 +1553,7 @@ if (typeof module !== 'undefined') module.exports = DerbyOdds;
         </li>`).join('');
       const note = document.getElementById('lbSourceNote');
       note.textContent = src === 'chain'
-        ? ` Slam vault ${fmt(board.vault)} IMD: a 550+ ft swing takes half. Payouts follow the swarm's signed ranking.`
+        ? ` Slam vault ${fmt(board.vault)} IMD: a 550+ ft swing takes half. This board pays out; anyone can trigger it.`
         : ' Demo players shown until the contract is live.';
       document.getElementById('lbAgentLink').style.display = lbTab === 1 ? '' : 'none';
       if (typeof renderSettle === 'function') renderSettle();
@@ -1625,21 +1625,20 @@ if (typeof module !== 'undefined') module.exports = DerbyOdds;
           rpc: 'https://rpc.mainnet.chain.robinhood.com',
           explorer: 'https://robinhoodchain.blockscout.com',
           imd: '0x5F7Bb59365ce557C26dbcAa4EE9d39A4b95B7127',
-          derby: '', // ← SwarmDerby address goes here after the IMD launch
-          imdApi: 'https://api.imd.fun'
+          derby: '' // ← SwarmDerby address goes here after the IMD launch
         },
         'robinhood-testnet': {
           name: 'Robinhood Chain Testnet', chainId: 46630,
-          rpc: '', explorer: '', imd: '', derby: '', imdApi: 'https://api.imd.fun'
+          rpc: '', explorer: '', imd: '', derby: ''
         },
-        local: { name: 'Local devnet', chainId: 4663, rpc: 'http://127.0.0.1:8545', explorer: '', imd: '', derby: '', imdApi: '' }
+        local: { name: 'Local devnet', chainId: 31337, rpc: 'http://127.0.0.1:8545', explorer: '', imd: '', derby: '' }
       };
       const qs = new URLSearchParams(location.search);
       const key = networks[qs.get('network')] ? qs.get('network') : 'robinhood';
       const net = { ...networks[key], key };
       // Address overrides only for the local devnet: a shared link must never be able to
       // point real players at a different contract.
-      if (key === 'local') for (const k of ['rpc', 'derby', 'imd', 'imdApi']) if (qs.get(k)) net[k] = qs.get(k);
+      if (key === 'local') for (const k of ['rpc', 'derby', 'imd']) if (qs.get(k)) net[k] = qs.get(k);
       return { ...net, sessionFundEth: '0.0003', sessionLowEth: '0.00005' };
     })();
 
@@ -1649,10 +1648,11 @@ if (typeof module !== 'undefined') module.exports = DerbyOdds;
       'function turns(uint8 league, address player) view returns (uint256)',
       'function arcadeSwingsLeft(address player) view returns (uint256)',
       'function sessionOf(address) view returns (address)',
-      'function swings(uint256) view returns (address player, uint8 league, uint8 quality, uint8 velo, uint8 status, uint64 targetBlock, bytes32 commit)',
+      'function sessionNonce(address) view returns (uint256)',
+      'function swings(uint256) view returns (address player, uint8 league, uint8 quality, uint8 velo, uint8 status, uint64 targetBlock, bytes32 commit, uint32 day)',
       'function buyTurns(uint8 league, uint256 count)',
       'function buyPacks(uint8 league, uint256 packs)',
-      'function setSession(address session)',
+      'function setSession(address session, bytes consent)',
       'function swing(uint8 league, uint8 quality, uint8 velo, bytes32 commit) returns (uint256)',
       'function finalize(uint256 swingId, bytes32 salt) returns (uint8, uint16)',
       'event SwingCommitted(uint256 indexed swingId, address indexed player, uint8 league, uint8 quality, uint8 velo, uint64 targetBlock)',
@@ -1663,8 +1663,10 @@ if (typeof module !== 'undefined') module.exports = DerbyOdds;
       'function currentDay() view returns (uint256)',
       'function board(uint8 league, uint256 day) view returns (address[] players, uint256[] scores)',
       'function dayScore(uint8 league, uint256 day, address player) view returns (uint256)',
-      'function pot(uint256 league) view returns (uint256)',
-      'function vault(uint256 league) view returns (uint256)'
+      'function dayPot(uint8 league, uint256 day) view returns (uint256)',
+      'function rollover(uint256 league) view returns (uint256)',
+      'function vault(uint256 league) view returns (uint256)',
+      'function nextSettlement(uint8 league) view returns (bool exists, bool ready, uint256 day, uint256 amount, uint256 tip)'
     ];
     const ERC20_ABI = [
       'function balanceOf(address) view returns (uint256)',
@@ -1697,20 +1699,20 @@ if (typeof module !== 'undefined') module.exports = DerbyOdds;
       WrongStatus: 'That swing is already settled.',
       TooEarly: 'Too early to reveal. Retrying soon.',
       NotExpired: 'Swing has not expired yet.',
-      BadSession: 'That quick-swing key is already in use.',
-      TransferFailed: 'IMD transfer failed. Check balance and approval.'
+      BadSession: 'Quick-swing key refused. Turn quick swings on again.',
+      TransferFailed: 'IMD transfer failed. Check balance and approval.',
+      NothingToSettle: 'Nothing to pay out right now.',
+      DayNotOver: 'That day is not over yet. Try again in a minute.',
+      BadPrice: 'Price out of range.',
+      ZeroAddress: 'Missing address.'
     };
-    const DERBY_ERRORS = new ethers.Interface([
-      ...Object.keys(ERROR_TEXT).map((n) => `error ${n}()`),
-      'error BadAttestation(string why)'
-    ]);
+    const DERBY_ERRORS = new ethers.Interface(Object.keys(ERROR_TEXT).map((n) => `error ${n}()`));
 
     function decodeRevert(e) {
       const data = e?.data || e?.info?.error?.data || e?.error?.data;
       if (typeof data !== 'string' || data.length < 10) return null;
       try {
         const err = DERBY_ERRORS.parseError(data);
-        if (err.name === 'BadAttestation') return `Oracle answer rejected (${err.args.why}).`;
         return ERROR_TEXT[err.name] || null;
       } catch (x) { return null; }
     }
@@ -1753,10 +1755,13 @@ if (typeof module !== 'undefined') module.exports = DerbyOdds;
         const day = await boardReader.currentDay();
         const me = live.account ? live.account.toLowerCase() : null;
         for (const league of [0, 1]) {
-          const [[players, scores], pot, vault, mine] = await Promise.all([
-            boardReader.board(league, day), boardReader.pot(league), boardReader.vault(league),
+          const [[players, scores], dayPot, rollover, next, vault, mine] = await Promise.all([
+            boardReader.board(league, day), boardReader.dayPot(league, day), boardReader.rollover(league),
+            boardReader.nextSettlement(league), boardReader.vault(league),
             me ? boardReader.dayScore(league, day, live.account) : Promise.resolve(0n)
           ]);
+          // Today's prize so far: today's purchases, plus the rollover once earlier days are paid
+          const pot = dayPot + (next.exists && next.day < day ? 0n : rollover);
           const rows = players.map((a, i) => ({
             name: a.toLowerCase() === me ? 'YOU' : shortAddr(a), addr: a,
             feet: Number(scores[i]), you: a.toLowerCase() === me
@@ -1777,55 +1782,18 @@ if (typeof module !== 'undefined') module.exports = DerbyOdds;
     }
 
     // ── daily settlement ──
-    // The IMD swarm signs each league's daily ranking. Anyone can submit it to settleDay;
-    // whoever does earns 0.5% of the payout. The page finds a ready attestation through
-    // IMD's public oracle API and offers the button.
-    const ANSWER_TYPES = { bool: 0, address: 1, bytes32: 2, uint256: 3, 'address[]': 4, 'bytes32[]': 5 };
-    const LEAGUE_EVENT = ['ArcadeGain', 'AgentFeet'];
+    // The contract's own board pays each finished UTC day: anyone calls settleNextDay(league)
+    // and earns 0.5% of the payout. The page reads nextSettlement and offers the button.
     const SETTLE_ABI = [
-      'function settleDay(uint8 league, (bytes32 requestId, uint256 chainId, bytes32 questionHash, uint8 answerType, bytes answer, uint256 figure, uint64 fromBlock, uint64 toBlock, bytes32 blockHash, bytes32 panelJobId, uint16 panelSize, uint16 quorum, uint16 agreed, uint64 issuedAt, uint64 expiresAt) a, bytes signature)',
-      'function usedRequest(bytes32) view returns (bool)',
-      'function lastSettledToBlock(uint256 league) view returns (uint256)',
-      'function oracle() view returns (address signer, bytes32 arcadeQuestion, bytes32 agentQuestion)',
-      'function pot(uint256 league) view returns (uint256)'
+      'function settleNextDay(uint8 league)',
+      'function nextSettlement(uint8 league) view returns (bool exists, bool ready, uint256 day, uint256 amount, uint256 tip)'
     ];
     const settle = [{ state: 'idle' }, { state: 'idle' }]; // per league
     let settleChecking = false;
-
-    function toAttestation(m) {
-      const answerType = typeof m.answerType === 'string' && !/^\d+$/.test(m.answerType)
-        ? ANSWER_TYPES[m.answerType] : Number(m.answerType);
-      return {
-        requestId: m.requestId, chainId: BigInt(m.chainId), questionHash: m.questionHash, answerType,
-        answer: m.answer, figure: BigInt(m.figure ?? 0), fromBlock: BigInt(m.fromBlock), toBlock: BigInt(m.toBlock),
-        blockHash: m.blockHash, panelJobId: m.panelJobId, panelSize: Number(m.panelSize), quorum: Number(m.quorum),
-        agreed: Number(m.agreed), issuedAt: BigInt(m.issuedAt), expiresAt: BigInt(m.expiresAt)
-      };
-    }
-
-    async function findSettlement(league, c) {
-      const api = DERBY_CONFIG.imdApi;
-      const list = await (await fetch(`${api}/oracle/requests?status=attested&limit=10&q=${encodeURIComponent(LEAGUE_EVENT[league])}`)).json();
-      const mine = (list.requests || []).filter((r) =>
-        (r.question || '').toLowerCase().includes(DERBY_CONFIG.derby.toLowerCase()) && (r.question || '').includes(LEAGUE_EVENT[league]));
-      const [cfg, last] = await Promise.all([c.oracle(), c.lastSettledToBlock(league)]);
-      const want = league === 0 ? cfg.arcadeQuestion : cfg.agentQuestion;
-      for (const r of mine) {
-        const res = await fetch(`${api}/oracle/requests/${r.id}/attestation`);
-        if (!res.ok) continue;
-        const att = await res.json();
-        const a = toAttestation(att.message);
-        if (a.questionHash.toLowerCase() !== want.toLowerCase()) continue;
-        if (a.toBlock <= last) continue;
-        if (await c.usedRequest(a.requestId)) continue;
-        if (BigInt(Math.floor(Date.now() / 1000)) > a.expiresAt) continue;
-        return { a, signature: att.signature };
-      }
-      return null;
-    }
+    const dayLabel = (day) => new Date(Number(day) * 86400000).toISOString().slice(0, 10);
 
     async function checkSettlements() {
-      if (!liveReady() || !DERBY_CONFIG.imdApi || settleChecking) return;
+      if (!liveReady() || settleChecking) return;
       settleChecking = true;
       try {
         const provider = live.read || new ethers.JsonRpcProvider(DERBY_CONFIG.rpc, undefined, { staticNetwork: ethers.Network.from(DERBY_CONFIG.chainId) });
@@ -1833,14 +1801,10 @@ if (typeof module !== 'undefined') module.exports = DerbyOdds;
         for (const league of [0, 1]) {
           if (settle[league].state === 'sending') continue;
           try {
-            const found = await findSettlement(league, c);
-            if (found) {
-              const pot = await c.pot(league);
-              const tip = (pot * 9000n / 10000n) * 50n / 10000n;
-              settle[league] = { state: 'ready', ...found, tip };
-            } else {
-              settle[league] = { state: 'none' };
-            }
+            const n = await c.nextSettlement(league);
+            if (n.exists && n.ready) settle[league] = { state: 'ready', day: n.day, amount: n.amount, tip: n.tip };
+            else if (n.exists) settle[league] = { state: 'waiting', day: n.day };
+            else settle[league] = { state: 'none' };
           } catch (e) {
             settle[league] = { state: 'error' };
           }
@@ -1858,14 +1822,20 @@ if (typeof module !== 'undefined') module.exports = DerbyOdds;
       const st = settle[typeof lbTab === 'number' ? lbTab : 0];
       if (!liveReady()) { note.textContent = ''; btn.style.display = 'none'; return; }
       if (st.state === 'ready') {
-        note.textContent = "The swarm signed yesterday's ranking. Anyone can pay it out.";
-        btn.textContent = `PAY THE WINNERS · EARN ${Number(ethers.formatEther(st.tip)).toFixed(3)} IMD`;
+        note.textContent = st.tip > 0n
+          ? `${dayLabel(st.day)} is over. Anyone can pay its winners.`
+          : `${dayLabel(st.day)} had no homers. Closing it rolls its pot into the next day.`;
+        btn.textContent = st.tip > 0n
+          ? `PAY THE WINNERS · EARN ${Number(ethers.formatEther(st.tip)).toFixed(3)} IMD`
+          : 'CLOSE THE DAY · ROLL THE POT OVER';
         btn.style.display = '';
       } else if (st.state === 'sending') {
         note.textContent = 'Paying out…';
         btn.style.display = 'none';
       } else {
-        note.textContent = st.state === 'error' ? "Couldn't reach the IMD oracle API." : 'Payouts run after the swarm signs the ranking at 00:00 UTC.';
+        note.textContent = st.state === 'error' ? "Couldn't reach Robinhood Chain."
+          : st.state === 'waiting' && st.day < BigInt(Math.floor(Date.now() / 86400000)) ? 'Last reveals are closing. Payout opens in under a minute.'
+          : 'Payouts open after 00:00 UTC.';
         btn.style.display = 'none';
       }
     }
@@ -1880,12 +1850,14 @@ if (typeof module !== 'undefined') module.exports = DerbyOdds;
       try {
         // The tip goes to msg.sender, so settle from the main wallet, never the session key
         const c = new ethers.Contract(DERBY_CONFIG.derby, SETTLE_ABI, live.signer);
-        await c.settleDay.staticCall(league, st.a, st.signature);
+        await c.settleNextDay.staticCall(league);
         showBanner('PAY THE WINNERS', 'Confirm in your wallet', 'green');
-        await waitTx(await c.settleDay(league, st.a, st.signature));
-        showBanner('PAID OUT', `${league === 0 ? 'Arcade' : 'Agent'} winners paid · tip sent to you`, 'gold');
-        postCommentary(`Daemon #42: Yesterday's ${league === 0 ? 'arcade' : 'agent'} winners are paid. Thanks for settling.`);
-        settle[league] = { state: 'none' };
+        await waitTx(await c.settleNextDay(league));
+        showBanner('PAID OUT', st.tip > 0n ? `${league === 0 ? 'Arcade' : 'Agent'} winners paid · tip sent to you` : 'Pot rolled over to the next day', 'gold');
+        postCommentary(st.tip > 0n
+          ? `Daemon #42: ${dayLabel(st.day)} ${league === 0 ? 'arcade' : 'agent'} winners are paid. Thanks for settling.`
+          : `Daemon #42: ${dayLabel(st.day)} closed with no homers. The pot rolls on.`);
+        settle[league] = { state: 'idle' };
       } catch (e) {
         txError(e);
         settle[league] = { state: 'idle' };
@@ -1923,8 +1895,10 @@ if (typeof module !== 'undefined') module.exports = DerbyOdds;
         live.browser = new ethers.BrowserProvider(window.ethereum);
         live.signer = await live.browser.getSigner();
         live.account = await live.signer.getAddress();
+        // No read cache: the session key sends transactions back to back on ~100ms blocks,
+        // and ethers' default 250ms cache would hand it a stale nonce.
         live.read = new ethers.JsonRpcProvider(DERBY_CONFIG.rpc, undefined, {
-          staticNetwork: ethers.Network.from(DERBY_CONFIG.chainId)
+          staticNetwork: ethers.Network.from(DERBY_CONFIG.chainId), cacheTimeout: -1
         });
         live.read.pollingInterval = 200;
         if (liveReady()) {
@@ -2043,8 +2017,14 @@ if (typeof module !== 'undefined') module.exports = DerbyOdds;
         if (!live.sessionActive) {
           const w = ethers.Wallet.createRandom().connect(live.read);
           localStorage.setItem(storeKey('session'), w.privateKey);
+          // The key signs its consent to play for this wallet; the contract checks it.
+          const consent = await w.signTypedData(
+            { name: 'SwarmDerby', version: '1', chainId: DERBY_CONFIG.chainId, verifyingContract: DERBY_CONFIG.derby },
+            { Session: [{ name: 'player', type: 'address' }, { name: 'session', type: 'address' }, { name: 'nonce', type: 'uint256' }] },
+            { player: live.account, session: w.address, nonce: await live.derby.sessionNonce(w.address) }
+          );
           showBanner('QUICK SWINGS 1/2', 'Authorize the session key in your wallet', 'green');
-          await waitTx(await live.derby.connect(live.signer).setSession(w.address));
+          await waitTx(await live.derby.connect(live.signer).setSession(w.address, consent));
           live.session = w;
           live.sessionActive = true;
         }

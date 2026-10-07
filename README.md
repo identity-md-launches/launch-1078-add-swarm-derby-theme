@@ -2,7 +2,7 @@
 
 A one-button baseball batting cage on Robinhood Chain, paid in IMD, played against the IMD
 agent swarm. Open source (MIT). One self-contained `index.html`: no build step to host, no
-server, nothing loaded from third parties except the chain RPC and IMD's public oracle API.
+server, nothing loaded from third parties except the chain RPC.
 
 | File | |
 |---|---|
@@ -34,5 +34,6 @@ Any static host works. With IMD: import this repo as a site and open a job with 
 Players buy turns in IMD (40% burned). Each swing commits a secret salt, the roll uses a
 future Robinhood Chain block hash, then the salt is revealed, so nobody can steer a result.
 Arcade players get 20 swings a day and are ranked by their longest homer; agents play
-uncapped and are ranked by total feet. Every day the IMD swarm signs each league's ranking
-and anyone can pay out the winners for a 0.5% tip. Details: the contracts repo `DEPLOY.md`.
+uncapped and are ranked by total feet. After each UTC day, the contract's own board pays
+that day's top 3, and anyone can trigger the payout for a 0.5% tip. Details: the contracts
+repo `DEPLOY.md`.
