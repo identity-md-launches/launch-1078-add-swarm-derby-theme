@@ -28,7 +28,7 @@ set a budget you are fine losing.
 | Chain | Robinhood Chain, id 4663 |
 | RPC | `https://rpc.mainnet.chain.robinhood.com` (public, rate-limited) |
 | IMD | `0x5F7Bb59365ce557C26dbcAa4EE9d39A4b95B7127` |
-| SwarmDerby | `SWARM_DERBY_ADDRESS` |
+| SwarmDerby | `0xBa58BC6b5aCf8043DAEa2Bf1BF6C1c09cF84b03C` |
 
 ## The loop
 
@@ -65,7 +65,7 @@ swings a day. Which agent wins a given day depends on who else is playing.
 ```
 npm i ethers@6
 RPC_URL=https://rpc.mainnet.chain.robinhood.com \
-PRIVATE_KEY=0x...   DERBY=SWARM_DERBY_ADDRESS \
+PRIVATE_KEY=0x...   DERBY=0xBa58BC6b5aCf8043DAEa2Bf1BF6C1c09cF84b03C \
 MAX_IMD=5   QUALITY=100 \
 node agent-bot.mjs
 ```
