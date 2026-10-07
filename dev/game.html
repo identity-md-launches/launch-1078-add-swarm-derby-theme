@@ -4,12 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SWARM DERBY // The 1-Button Batting Cage</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts: JetBrains Mono & Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <!-- dev/build.py puts the bundled fonts here and the compiled Tailwind CSS before </head>.
+       This source loads nothing from third parties: build it and open ../index.html. -->
   
   <style>
     body {
@@ -1954,6 +1950,7 @@ if (typeof module !== 'undefined') module.exports = DerbyOdds;
         ]);
         turnsLeft = Number(t);
         live.swingsLeft = Number(left);
+        live.swingsDay = utcDay();
         live.sessionEth = eth;
         await updateGasEstimate();
         updateStatsHUD();
@@ -2095,12 +2092,36 @@ if (typeof module !== 'undefined') module.exports = DerbyOdds;
       return { tier: Number(ev.args.tier), feet: Number(ev.args.feet), tx: rc.hash };
     }
 
+    /** Swing id of a commit whose receipt never reached the page (e.g. a reload mid-swing).
+     *  Returns -1n if the commit reverted, null if it isn't on-chain (yet). */
+    async function findCommittedSwing(p) {
+      if (p.tx) {
+        const rc = (await live.read.getTransactionReceipt(p.tx))
+          || ((await live.read.getTransaction(p.tx)) ? await live.read.waitForTransaction(p.tx, 1, 60000) : null);
+        if (rc) return rc.status === 1 ? findEvent(rc, 'SwingCommitted').args.swingId : -1n;
+      }
+      // No hash (the page closed before the wallet returned one) or the node forgot it:
+      // look for this commit among the player's swings inside the reveal window.
+      const from = Math.max(0, (await blockNumber()) - FINALIZE_WINDOW - 20);
+      for (const log of await live.derby.queryFilter(live.derby.filters.SwingCommitted(null, live.account), from)) {
+        if ((await live.derby.swings(log.args.swingId)).commit === p.commit) return log.args.swingId;
+      }
+      return null;
+    }
+
     async function recoverPending() {
       const list = loadPending();
       for (const p of list) {
         if (p.swingId == null) {
-          if (Date.now() - p.at > 10 * 60 * 1000) dropPending(p.commit);
-          continue;
+          let id = null;
+          try { id = await findCommittedSwing(p); } catch (e) {}
+          if (id === -1n) { dropPending(p.commit); continue; } // reverted: no turn was spent
+          if (id == null) {
+            if (Date.now() - p.at > 10 * 60 * 1000) dropPending(p.commit);
+            continue;
+          }
+          p.swingId = id.toString();
+          updatePending(p.commit, { swingId: p.swingId });
         }
         try {
           const sw = await live.derby.swings(p.swingId);
@@ -2124,7 +2145,9 @@ if (typeof module !== 'undefined') module.exports = DerbyOdds;
 
       if (live.session) live.sessionEth = await live.read.getBalance(live.session.address);
       await updateGasEstimate();
-      const rc = await waitTx(await actor().swing(ARCADE, q, v, commit));
+      const tx = await actor().swing(ARCADE, q, v, commit);
+      if (q > 0) updatePending(commit, { tx: tx.hash });
+      const rc = await waitTx(tx);
       if (q === 0) {
         const ev = findEvent(rc, 'SwingResolved');
         return { tier: 0, name: 'WHIFF', feet: 0, id: ev.args.swingId.toString(), tx: rc.hash };
@@ -2288,7 +2311,7 @@ if (typeof module !== 'undefined') module.exports = DerbyOdds;
       sound.init();
 
       if (live.on && live.busy) return; // a transaction is in flight
-      if (live.on && live.swingsLeft === 0 && (gameState === STATES.IDLE || gameState === STATES.RESULT)) {
+      if (capReached() && (gameState === STATES.IDLE || gameState === STATES.RESULT)) {
         showCapReached();
         return;
       }
@@ -2371,6 +2394,15 @@ if (typeof module !== 'undefined') module.exports = DerbyOdds;
       document.getElementById('oddsBarSlam').style.width = Math.max(0.6, p.slam / 100) + '%';
     }
 
+    // The arcade allowance is per UTC day: a count read before midnight no longer applies.
+    const capReached = () => live.on && live.swingsLeft === 0 && live.swingsDay === utcDay();
+    let liveDay = utcDay();
+    setInterval(() => {
+      if (utcDay() === liveDay) return;
+      liveDay = utcDay();
+      if (live.on && !live.busy) refreshLive();
+    }, 1000);
+
     function showCapReached() {
       showBanner("THAT'S 20 FOR TODAY", 'Back at 00:00 UTC, or let your agent play', 'green');
       postCommentary('Daemon #42: Daily limit reached. The board resets at midnight UTC. Agents can keep swinging in their own league.');
@@ -2380,7 +2412,7 @@ if (typeof module !== 'undefined') module.exports = DerbyOdds;
     }
 
     function startMashPhase() {
-      if (live.on && live.swingsLeft === 0) { showCapReached(); return; }
+      if (capReached()) { showCapReached(); return; }
       if (turnsLeft <= 0) { setOutOfTurns(); return; }
       if (live.on && live.swingsLeft != null) live.swingsLeft -= 1; // optimistic; refreshLive corrects it
       turnsLeft -= 1;

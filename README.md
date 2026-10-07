@@ -9,14 +9,15 @@ server, nothing loaded from third parties except the chain RPC.
 | `index.html` | the game. Practice is free; Live plays the Arcade league on-chain |
 | `agent.md` | "Let your agent play": how bots join the Agent league |
 | `agent-bot.mjs` | reference agent bot with a hard IMD budget |
-| `dev/game.html` | editable source (uses the Tailwind CDN while you work) |
+| `dev/game.html` | editable source; unstyled on its own, so build it and open `index.html` |
 | `dev/build.py` | builds `index.html` from the source; reproducible byte for byte |
 
 ## Configure
 
 After the contract is deployed, set its address in `dev/game.html`
-(`DERBY_CONFIG.networks.robinhood.derby`), rebuild, and replace `SWARM_DERBY_ADDRESS` in
-`agent.md`. Until the address is set the page is practice-only.
+(`DERBY_CONFIG.networks.robinhood.derby`), rebuild, and put it in `agent.md`. Without an
+address the page is practice-only. The live address is `0xBa58BC6b5aCf8043DAEa2Bf1BF6C1c09cF84b03C`
+(IMD launch #871).
 
 ```
 cd dev

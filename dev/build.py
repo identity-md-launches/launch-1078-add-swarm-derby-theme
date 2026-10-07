@@ -5,9 +5,9 @@
     npm i tailwindcss@3.4.17 @fontsource/inter@5 @fontsource/jetbrains-mono@5
     python3 build.py game.html ../index.html
 
-Drops the Tailwind runtime CDN and Google Fonts links, then inlines Tailwind CSS compiled for
-exactly the classes the page uses, plus the two fonts (latin subset) as data URLs. The result
-loads nothing from third-party servers except the chain RPC and IMD's oracle API.
+Inlines the two fonts (latin subset) as data URLs and Tailwind CSS compiled for exactly the
+classes the page uses. Neither the source nor the result loads anything from third-party
+servers; the page only talks to the chain RPC.
 """
 import base64, os, subprocess, sys
 
@@ -22,9 +22,10 @@ for fam, folder, weights in [('Inter', 'inter', [400, 600, 700, 900]), ('JetBrai
                      "src:url(data:font/woff2;base64,%s) format('woff2');unicode-range:%s;}" % (fam, w, base64.b64encode(data).decode(), UNICODE))
 
 s = open(src).read()
-s = s.replace('  <script src="https://cdn.tailwindcss.com"></script>\n', '')
-a = s.index('  <link rel="preconnect" href="https://fonts.googleapis.com">')
-b = s.index('rel="stylesheet">', a) + len('rel="stylesheet">')
+for bad in ('cdn.tailwindcss', 'fonts.googleapis', 'fonts.gstatic', '<script src='):
+    assert bad not in s, f'{src} must not load {bad}'
+a = s.index('  <!-- dev/build.py puts the bundled fonts here')
+b = s.index('-->', a) + len('-->')
 s = s[:a] + '  <!-- Inter and JetBrains Mono (SIL Open Font License 1.1), latin subset, bundled -->\n  <style>' + ''.join(faces) + '</style>' + s[b:]
 
 open('page.html', 'w').write(s)
@@ -32,7 +33,7 @@ open('in.css', 'w').write('@tailwind base;\n@tailwind components;\n@tailwind uti
 open('tailwind.config.js', 'w').write("module.exports = { content: ['./page.html'], theme: { extend: {} }, plugins: [] };\n")
 subprocess.run(['npx', 'tailwindcss', '-i', 'in.css', '-o', 'tw.css', '--minify'], check=True, capture_output=True)
 s = s.replace('</head>', '  <!-- Tailwind CSS v3.4.17 (MIT), compiled for exactly the classes this page uses -->\n  <style>' + open('tw.css').read() + '</style>\n</head>', 1)
-for bad in ('cdn.tailwindcss', 'fonts.googleapis', 'fonts.gstatic'):
+for bad in ('cdn.tailwindcss', 'fonts.googleapis', 'fonts.gstatic', '<script src='):
     assert bad not in s, bad
 for f in ('page.html', 'in.css', 'tw.css', 'tailwind.config.js'):
     os.remove(f)
