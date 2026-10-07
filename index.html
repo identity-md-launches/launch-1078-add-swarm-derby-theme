@@ -1553,7 +1553,7 @@ if (typeof module !== 'undefined') module.exports = DerbyOdds;
         </li>`).join('');
       const note = document.getElementById('lbSourceNote');
       note.textContent = src === 'chain'
-        ? ` Slam vault ${fmt(board.vault)} IMD: a 550+ ft swing takes half. This board pays out; anyone can trigger it.`
+        ? ` Slam vault ${fmt(board.vault)} IMD: a 550+ ft swing takes 10%. This board pays out; anyone can trigger it.`
         : ' Demo players shown until the contract is live.';
       document.getElementById('lbAgentLink').style.display = lbTab === 1 ? '' : 'none';
       if (typeof renderSettle === 'function') renderSettle();
@@ -1673,7 +1673,7 @@ if (typeof module !== 'undefined') module.exports = DerbyOdds;
       'function allowance(address, address) view returns (uint256)',
       'function approve(address, uint256) returns (bool)'
     ];
-    const FINALIZE_WINDOW = 240;
+    const FINALIZE_WINDOW = 255;
 
     const live = {
       on: false, busy: false, account: null,
@@ -1704,7 +1704,8 @@ if (typeof module !== 'undefined') module.exports = DerbyOdds;
       NothingToSettle: 'Nothing to pay out right now.',
       DayNotOver: 'That day is not over yet. Try again in a minute.',
       BadPrice: 'Price out of range.',
-      ZeroAddress: 'Missing address.'
+      ZeroAddress: 'Missing address.',
+      ZeroCount: 'Pick at least one turn.'
     };
     const DERBY_ERRORS = new ethers.Interface(Object.keys(ERROR_TEXT).map((n) => `error ${n}()`));
 
@@ -2517,7 +2518,7 @@ if (typeof module !== 'undefined') module.exports = DerbyOdds;
       );
 
       postCommentary(tier === 5
-        ? `Daemon #42: ${flightTargetDistance} FT. That's a vault-cracker. Half the vault pays out on mainnet.`
+        ? `Daemon #42: ${flightTargetDistance} FT. That's a vault-cracker. 10% of the vault pays out on mainnet.`
         : `Daemon #42: GUS sends it ${flightTargetDistance} feet. Counts toward today's leaderboard.`);
     }
 

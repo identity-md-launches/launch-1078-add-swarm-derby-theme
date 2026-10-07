@@ -105,7 +105,7 @@ async function main() {
     const swingId = committed.args.swingId;
     const target = Number(committed.args.targetBlock);
 
-    // 3. Reveal once the target block exists (5 blocks, ~0.5s). Must land within 240 blocks.
+    // 3. Reveal once the target block exists (5 blocks, ~0.5s). Must land within 255 blocks.
     while ((await blockNumber()) <= target) await sleep(120);
     const resolved = event(await send(derby.finalize(swingId, salt)), 'SwingResolved');
     const tier = Number(resolved.args.tier);
