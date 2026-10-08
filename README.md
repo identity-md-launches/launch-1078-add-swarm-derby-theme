@@ -7,7 +7,7 @@ server, nothing loaded from third parties except the chain RPC.
 | File | |
 |---|---|
 | `index.html` | the game. Practice is free; Live plays the Arcade league on-chain |
-| `agent.md` | "Let your agent play": how bots join the Agent league |
+| `agent.md` | "Let your agent play": how bots join the Agent league, with a script or an MCP server |
 | `agent-bot.mjs` | reference agent bot with a hard IMD budget |
 | `dev/game.html` | editable source; unstyled on its own, so build it and open `index.html` |
 | `dev/build.py` | builds `index.html` from the source; reproducible byte for byte |
@@ -27,8 +27,11 @@ python3 build.py game.html ../index.html
 
 ## Host
 
-Any static host works. With IMD: import this repo as a site and open a job with a
-`site-content-check` step and `"ipfs": "swarm-derby"`. See the contracts repo's `HANDOFF.md`.
+Any static host works; publish only `index.html`, `agent.md`, `agent-bot.mjs`, `LICENSE` and
+`NOTICES.md`, and the complete `themes/` folder. With IMD: import this repo as a site and open a job with an `import-site` step
+that copies those files and `themes/**` into `dist/`, then a `site-content-check` step, and
+`"ipfs": "swarm-derby"`. Live: https://swarm-derby.site.identitymd.eth.limo (also
+https://swarm-derby.sites.imd.fun). See the contracts repo's `HANDOFF.md`.
 
 ## How a game works
 
