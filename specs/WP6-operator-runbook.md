@@ -14,18 +14,19 @@ payment, goes back to asking.
 
 | Time | Who | Step |
 |---|---|---|
-| 18:00 | operator (anyone can) | `settle(D)` on DerbyAuction for tomorrow's theme day `D` |
+| 18:00 | operator (anyone can) | `settle(D)` on DerbyAuction for tomorrow's theme day `D` (after the last extension; 19:00 at the latest) |
 | 18:05 | operator | read the winning `Bid`; screen the answers (WP5) |
 | 18:15 | operator | send the WP5 `job.continue` |
 | ~19:15 | swarm | pack built, site republished |
 | by 21:00 | operator | preview to the owner: screenshots, title, shoutout, live link |
 | by 23:30 | owner | only if something's wrong: `veto(D)` from the owner wallet |
 | 00:00 | — | theme day `D` begins |
-| after 00:00 | anyone | `settleNextDay(0)`, `settleNextDay(1)` on SwarmDerby and `payBonus(D−1)` on DerbyAuction (site buttons, or the operator) |
+| after 00:00 | anyone | `settleNextDay(0)`, `settleNextDay(1)` on SwarmDerby and `payBonus(D−1)` on DerbyAuction (site buttons, or the operator; the operator also pays an empty board, which earns no tip, so its bonus goes to `carry`) |
 
 **If the operator goes quiet** (a scheduled turn misses), nothing breaks: the day runs on
 `gus`, the auction can be settled by anyone, and the bonus still pays from the board. The
-owner just sees no preview that night.
+owner just sees no preview that night. An auction settled after midnight UTC takes no carry,
+and the owner can no longer veto it.
 
 ## Money
 
